@@ -1,0 +1,459 @@
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue';
+import axios from 'axios';
+
+
+        // Reactive form data
+const formData = reactive({
+          longUrl: '',
+          customCode: '',
+          useCustomUrl: false,
+          useExpiry: false,
+          expiryDays: 30,
+          trackClicks: true
+        });
+
+        const urls = ref([]);
+        const isLoading = ref(false);
+        const error = ref('');
+        const successMessage = ref('');
+        const showSuccessAlert = ref(false);
+        const isLoadingAnalytics = ref(false);
+
+    const api = axios.create({
+      baseURL: 'http://localhost:5000',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+        // Fetch all URLs on component mount
+        onMounted(() => {
+          fetchUserUrls();
+        });
+
+        // Methods
+        const fetchUserUrls = async () => {
+          try {
+            // In a real application, you would have an endpoint to fetch all user URLs
+            // For now, we'll load from localStorage as a fallback
+            const savedUrls = localStorage.getItem('shortUrls');
+            if (savedUrls) {
+              urls.value = JSON.parse(savedUrls);
+            }
+          } catch (err) {
+            console.error('Error fetching URLs:', err);
+          }
+        };
+
+        const shortenUrl = async () => {
+          // Reset error and success states
+          error.value = '';
+          successMessage.value = '';
+          showSuccessAlert.value = false;
+
+          // Validate URL
+          if (!formData.longUrl) {
+            error.value = 'Please enter a URL';
+            return;
+          }
+
+          // Validate URL format
+          try {
+            new URL(formData.longUrl);
+          } catch (err) {
+            err.value = 'Invalid URL format. Please include http:// or https://';
+            return;
+          }
+
+          // Validate custom code if used
+          if (formData.useCustomUrl && !formData.customCode) {
+            error.value = 'Please enter a custom URL suffix';
+            return;
+          }
+
+          isLoading.value = true;
+
+          try {
+            // Prepare request data
+            const requestData = {
+              longUrl: formData.longUrl,
+              trackClicks: formData.trackClicks
+            };
+
+            // Add custom code if provided
+            if (formData.useCustomUrl) {
+              requestData.urlCode = formData.customCode;
+            }
+
+            // Add expiry if enabled
+            if (formData.useExpiry) {
+              const expiryDate = new Date();
+              expiryDate.setDate(expiryDate.getDate() + parseInt(formData.expiryDays));
+              requestData.expiresAt = expiryDate.toISOString();
+            }
+
+            // Send API request to create short URL
+            const response = await api.post('/api/url/shorten', requestData);
+
+            if (response.data && response.data.success) {
+              const newUrl = {
+                id: response.data.data._id || Date.now().toString(),
+                urlCode: response.data.data.urlCode,
+                longUrl: response.data.data.longUrl,
+                shortUrl: `${window.location.origin}/${response.data.data.urlCode}`,
+                clicks: response.data.data.clicks || 0,
+                createdAt: response.data.data.createdAt,
+                expiresAt: response.data.data.expiresAt,
+                copied: false
+              };
+
+              // Add to local state
+              urls.value.unshift(newUrl);
+
+              // Save to localStorage as backup
+              localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+
+              // Show success message
+              successMessage.value = `URL successfully shortened: ${newUrl.shortUrl}`;
+              showSuccessAlert.value = true;
+
+              // Reset form
+              formData.longUrl = '';
+              formData.customCode = '';
+
+              // Hide success message after 5 seconds
+              setTimeout(() => {
+                showSuccessAlert.value = false;
+              }, 5000);
+            } else {
+              throw new Error(response.data.message || 'Failed to create short URL');
+            }
+          } catch (err) {
+            console.error('Error creating short URL:', err);
+            error.value = err.response?.data?.message || err.message || 'An error occurred while shortening the URL';
+          } finally {
+            isLoading.value = false;
+          }
+        };
+
+        const copyToClipboard = async (url) => {
+          try {
+            // Use the Clipboard API
+            await navigator.clipboard.writeText(url.shortUrl);
+
+            // Find the URL object and mark as copied for visual feedback
+            const urlObject = urls.value.find(u => u.id === url.id);
+            if (urlObject) {
+              urlObject.copied = true;
+
+              // Reset copied status after 2 seconds
+              setTimeout(() => {
+                urlObject.copied = false;
+                localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+              }, 2000);
+            }
+          } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+          }
+        };
+
+        const deleteUrl = async (id, urlCode) => {
+          try {
+            // Call API to delete URL
+            const response = await api.delete(`/api/url/${urlCode}`);
+
+            if (response.data && response.data.success) {
+              // Remove from local state
+              urls.value = urls.value.filter(url => url.id !== id);
+
+              // Update localStorage
+              localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+
+              // Show success message
+              successMessage.value = 'URL successfully deleted';
+              showSuccessAlert.value = true;
+
+              // Hide success message after 5 seconds
+              setTimeout(() => {
+                showSuccessAlert.value = false;
+              }, 5000);
+            } else {
+              throw new Error(response.data.message || 'Failed to delete URL');
+            }
+          } catch (err) {
+            console.error('Error deleting URL:', err);
+            error.value = err.response?.data?.message || err.message || 'An error occurred while deleting the URL';
+
+            // Show error for 5 seconds
+            setTimeout(() => {
+              error.value = '';
+            }, 5000);
+          }
+        };
+
+        const getUrlAnalytics = async (urlCode) => {
+          try {
+            isLoadingAnalytics.value = true;
+
+            // Call API to get URL analytics
+            const response = await api.get(`/api/url/analytics/${urlCode}`);
+
+            if (response.data && response.data.success) {
+              // Find and update the URL with analytics data
+              const urlIndex = urls.value.findIndex(url => url.urlCode === urlCode);
+              if (urlIndex !== -1) {
+                // Update clicks and other analytics
+                urls.value[urlIndex].clicks = response.data.data.clicks;
+
+                // Update localStorage
+                localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+              }
+            } else {
+              throw new Error(response.data.message || 'Failed to get URL analytics');
+            }
+          } catch (err) {
+            console.error('Error getting URL analytics:', err);
+          } finally {
+            isLoadingAnalytics.value = false;
+          }
+        };
+
+        const refreshUrlAnalytics = async (url) => {
+          await getUrlAnalytics(url.urlCode);
+        };
+
+        const truncateUrl = (url) => {
+          if (url && url.length > 40) {
+            return url.substring(0, 40) + '...';
+          }
+          return url;
+        };
+
+        const formatDate = (date) => {
+          if (!date) return 'Never';
+          return new Date(date).toLocaleDateString();
+        };
+
+</script>
+      <template>
+       <div class="max-w-4xl mx-auto">
+          <!-- Header -->
+          <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-indigo-600">URL Shortener</h1>
+            <p class="text-gray-600 mt-2">Shorten your long URLs into compact, easy-to-share links</p>
+          </div>
+
+          <!-- Success Alert -->
+          <div v-if="showSuccessAlert" class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-green-700">{{ successMessage }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Alert -->
+          <div v-if="error" class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-700">{{ error }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- URL Input Form -->
+          <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
+            <div class="p-6">
+              <form @submit.prevent="shortenUrl" class="space-y-4">
+                <div>
+                  <label for="longUrl" class="block text-sm font-medium text-gray-700 mb-1">Enter your long URL</label>
+                  <div class="flex flex-col sm:flex-row sm:items-center">
+                    <input
+                      type="url"
+                      id="longUrl"
+                      v-model="formData.longUrl"
+                      placeholder="https://example.com/very/long/url/that/needs/shortening"
+                      class="flex-1 block w-full px-4 py-3 border border-gray-300 rounded-t-lg sm:rounded-t-none sm:rounded-l-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      required
+                    >
+                    <button
+                      type="submit"
+                      class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-b-lg sm:rounded-b-none sm:rounded-r-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      :disabled="isLoading"
+                    >
+                      <span v-if="!isLoading">Shorten</span>
+                      <span v-else class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Custom URL Option -->
+                  <div>
+                    <div class="flex items-center space-x-2 mb-2">
+                      <input type="checkbox" id="custom-url" v-model="formData.useCustomUrl" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                      <label for="custom-url" class="text-sm font-medium text-gray-700">Use custom URL</label>
+                    </div>
+                    <div v-if="formData.useCustomUrl">
+                      <div class="flex items-center">
+                        <span class="inline-flex items-center px-3 py-2 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                          your-domain.com/
+                        </span>
+                        <input
+                          type="text"
+                          id="customCode"
+                          v-model="formData.customCode"
+                          placeholder="your-custom-url"
+                          class="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          pattern="[a-zA-Z0-9\-_]+"
+                          title="Only letters, numbers, hyphens and underscores allowed"
+                          :required="formData.useCustomUrl"
+                        >
+                      </div>
+                      <p class="mt-1 text-xs text-gray-500">Only letters, numbers, hyphens and underscores allowed</p>
+                    </div>
+                  </div>
+
+                  <!-- Expiry & Tracking Options -->
+                  <div>
+                    <div class="flex items-center space-x-3 mb-2">
+                      <input type="checkbox" id="expiry" v-model="formData.useExpiry" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                      <label for="expiry" class="text-sm font-medium text-gray-700">Set expiration</label>
+                    </div>
+                    <div v-if="formData.useExpiry" class="flex items-center space-x-2 mb-4">
+                      <input
+                        type="number"
+                        id="expiryDays"
+                        v-model="formData.expiryDays"
+                        min="1"
+                        max="365"
+                        class="w-20 px-2 py-1 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        :required="formData.useExpiry"
+                      >
+                      <label for="expiryDays" class="text-sm text-gray-700">days</label>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                      <input type="checkbox" id="track-clicks" v-model="formData.trackClicks" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                      <label for="track-clicks" class="text-sm font-medium text-gray-700">Track clicks</label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Results Table -->
+          <div v-if="urls.length > 0" class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-4 sm:p-6">
+              <h2 class="text-lg font-medium text-gray-900 mb-4">Your shortened URLs</h2>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Original URL
+                      </th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Short URL
+                      </th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Clicks
+                      </th>
+                      <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th v-if="formData.useExpiry" scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expires
+                      </th>
+                      <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr v-for="url in urls" :key="url.id">
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900 truncate max-w-xs" :title="url.longUrl">
+                          {{ truncateUrl(url.longUrl) }}
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-indigo-600 hover:text-indigo-900">
+                          <a :href="url.longUrl" target="_blank">{{ url.shortUrl }}</a>
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <span class="text-sm text-gray-900 mr-2">{{ url.clicks }}</span>
+                          <button
+                            @click="refreshUrlAnalytics(url)"
+                            class="text-gray-400 hover:text-gray-600 cursor-pointer"
+                            :class="{ 'animate-spin': isLoadingAnalytics }"
+                            :disabled="isLoadingAnalytics"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">{{ formatDate(url.createdAt) }}</div>
+                      </td>
+                      <td v-if="formData.useExpiry" class="px-4 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-500">{{ formatDate(url.expiresAt) }}</div>
+                      </td>
+                      <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button
+                          @click="copyToClipboard(url)"
+                          class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          :class="{ 'bg-green-100 text-green-700 hover:bg-green-200': url.copied }"
+                        >
+                          {{ url.copied ? 'Copied!' : 'Copy' }}
+                        </button>
+                        <button
+                          @click="deleteUrl(url.id, url.urlCode)"
+                          class="inline-flex items-center px-2.5 cursor-pointer py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="bg-white rounded-xl shadow-lg overflow-hidden p-6 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No shortened URLs</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new shortened URL.</p>
+          </div>
+        </div>
+    </template>
+
+
