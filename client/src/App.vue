@@ -1,5 +1,5 @@
 <script setup>
-import UrlShortener from './views/UrlShortener.vue'
+
 </script>
 
 <template>
@@ -24,7 +24,6 @@ import UrlShortener from './views/UrlShortener.vue'
 
   <!-- Main Content -->
   <main class="container mx-auto py-8 min-h-[calc(100vh-152px)]">
-    <UrlShortener />
     <router-view></router-view>
   </main>
 
