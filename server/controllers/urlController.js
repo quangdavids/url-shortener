@@ -40,16 +40,20 @@ const redirectUrl = async (req, res) => {
     try {
         // Check if we have the URL data from cache middleware
         if (res.locals.fromCache && res.locals.urlData) {
-        // Increment clicks asynchronously
-        urlService.getUrlByCode(res.locals.urlData.urlCode).catch(err => {
-            console.error('Error updating click count:', err);
-        });
-        
-        return res.redirect(res.locals.urlData.longUrl);
+            // Increment clicks asynchronously
+            urlService.getUrlByCode(res.locals.urlData.urlCode).catch(err => {
+                console.error('Error updating click count:', err);
+            });
+            
+            return res.redirect(res.locals.urlData.longUrl);
         }
         
         // Not in cache, fetch from database
         const { code } = req.params;
+        if (!code) {
+            throw new Error('URL code is required');
+        }
+        
         const url = await urlService.getUrlByCode(code);
         
         res.redirect(url.longUrl);
@@ -58,15 +62,15 @@ const redirectUrl = async (req, res) => {
         
         // Custom error page for URL not found or expired
         if (error.message === 'URL not found' || error.message === 'URL has expired') {
-        return res.status(404).json({
-            success: false,
-            message: error.message
-        });
+            return res.status(404).json({
+                success: false,
+                message: error.message
+            });
         }
         
         res.status(500).json({
-        success: false,
-        message: 'Server error'
+            success: false,
+            message: 'Server error'
         });
     }
 };

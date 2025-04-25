@@ -10,6 +10,12 @@ const cacheMiddleware = async (req, res, next) => {
   try {
     const { code } = req.params;
     
+    // Check if Redis is connected
+    if (!redisClient.isConnected()) {
+      console.warn('Redis not connected, skipping cache');
+      return next();
+    }
+    
     // Try to get the URL from cache
     const cachedUrl = await redisClient.get(`url:${code}`);
     
@@ -17,7 +23,7 @@ const cacheMiddleware = async (req, res, next) => {
       // URL found in cache, parse the JSON
       const urlData = JSON.parse(cachedUrl);
       
-      // Increment click count in database asynchronously without waiting
+      // Set cache data in response locals
       res.locals.fromCache = true;
       res.locals.urlData = urlData;
       
@@ -38,8 +44,14 @@ const cacheMiddleware = async (req, res, next) => {
  * @param {Object} urlData - URL data to cache
  * @param {number} expiration - Cache expiration time in seconds
  */
-const cacheUrl = async (code, urlData, expiration = process.env.CACHE_EXPIRATION_TIME) => {
+const cacheUrl = async (code, urlData, expiration = process.env.CACHE_EXPIRATION_TIME || 3600) => {
     try {
+        // Check if Redis is connected
+        if (!redisClient.isConnected()) {
+            console.warn('Redis not connected, skipping cache update');
+            return;
+        }
+        
         await redisClient.setex(`url:${code}`, expiration, JSON.stringify(urlData));
     } catch (error) {
         console.error('Error caching URL:', error);
@@ -48,10 +60,16 @@ const cacheUrl = async (code, urlData, expiration = process.env.CACHE_EXPIRATION
 
 /**
  * Remove a URL from the cache
- * @param {string} code - URL code to remove from cache
+ * @param {string} code - URL code to remove
  */
 const invalidateCache = async (code) => {
     try {
+        // Check if Redis is connected
+        if (!redisClient.isConnected()) {
+            console.warn('Redis not connected, skipping cache invalidation');
+            return;
+        }
+        
         await redisClient.del(`url:${code}`);
     } catch (error) {
         console.error('Error invalidating cache:', error);

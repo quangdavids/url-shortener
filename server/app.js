@@ -23,7 +23,10 @@ app.get('/health', (req, res) => {
 app.use('/api/url', urlRoutes);
 
 // Redirect route (with caching)
-app.get('/:code', cacheMiddleware, urlController.redirectUrl);
+app.get('/:code', cacheMiddleware, (req, res) => {
+    const { code } = req.params;
+    urlController.redirectUrl(req, res);
+});
 
 // 404 handler
 app.use((req, res) => {
