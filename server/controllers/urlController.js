@@ -37,38 +37,28 @@ const createUrl = async (req, res) => {
  * @param {Object} res - Express response object
  */
 // In your urlController.js - modify the redirectUrl function
-
 const redirectUrl = async (req, res) => {
     try {
+        let url;
+        const { code } = req.params;
+        
         // Check if we have the URL data from cache middleware
         if (res.locals.fromCache && res.locals.urlData) {
-            // Check if this is an API request from our frontend (check for XHR header)
-            const isApiRequest = req.xhr || req.headers.accept?.includes('application/json');
+            url = res.locals.urlData;
             
-            if (isApiRequest) {
-                // Return JSON with the URL for frontend to handle the redirect
-                return res.json({
-                    success: true,
-                    longUrl: res.locals.urlData.longUrl
-                });
-            }
-            
-            // Regular browser request - do the redirect
-            // Increment clicks asynchronously
-            urlService.getUrlByCode(res.locals.urlData.urlCode).catch(err => {
+            // Increment clicks asynchronously for ALL requests (cached)
+            urlService.getUrlByCode(url.urlCode).catch(err => {
                 console.error('Error updating click count:', err);
             });
+        } else {
+            // Not in cache, fetch from database
+            if (!code) {
+                throw new Error('URL code is required');
+            }
             
-            return res.redirect(res.locals.urlData.longUrl);
+            // This call to getUrlByCode will increment the click count
+            url = await urlService.getUrlByCode(code);
         }
-        
-        // Not in cache, fetch from database
-        const { code } = req.params;
-        if (!code) {
-            throw new Error('URL code is required');
-        }
-        
-        const url = await urlService.getUrlByCode(code);
         
         // Check if this is an API request from our frontend
         const isApiRequest = req.xhr || req.headers.accept?.includes('application/json');
