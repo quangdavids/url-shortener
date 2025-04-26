@@ -22,11 +22,9 @@ onMounted(async () => {
       },
     })
 
-    // UPDATED: Use the correct endpoint path - note that we're removing "/api/url"
+   
     const response = await api.get(`/${code}`)
 
-    // Since the backend is doing a redirect, this code won't actually execute
-    // The browser will follow the redirect automatically
 
     // But in case the backend returns JSON instead:
     if (response.data && response.data.longUrl) {

@@ -41,28 +41,58 @@ onMounted(() => {
   }, 30000)
 
   // Clean up interval on component unmount
-  onUnmounted(() => {
+onUnmounted(() => {
     clearInterval(analyticsInterval)
   })
 })
 
 
 
-
-// Methods
 const fetchUserUrls = async () => {
   try {
-    // In a real application, you would have an endpoint to fetch all user URLs
-    // For now, we'll load from localStorage as a fallback
-    const savedUrls = localStorage.getItem('shortUrls')
-    if (savedUrls) {
-      urls.value = JSON.parse(savedUrls)
+    isLoading.value = true;
+
+    try {
+      // Call your backend API
+      const response = await api.get('/api/url/all');
+
+      if (response.data && response.data.success) {
+        // Transform the data to match your client format
+        const dbUrls = response.data.data.map(url => ({
+          id: url._id || Date.now().toString(), // Fallback if _id isn't available
+          urlCode: url.urlCode,
+          longUrl: url.longUrl,
+          shortUrl: `${window.location.origin}/${url.urlCode}`,
+          clicks: url.clicks || 0,
+          createdAt: url.createdAt,
+          expiresAt: url.expiresAt,
+          copied: false
+        }));
+
+        urls.value = dbUrls;
+
+        // Update localStorage with the latest data
+        localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+      } else {
+        throw new Error('Failed to fetch URLs');
+      }
+    } catch (apiErr) {
+      console.error('API error:', apiErr);
+
+      // Fall back to localStorage if API fails
+      const savedUrls = localStorage.getItem('shortUrls');
+      if (savedUrls) {
+        urls.value = JSON.parse(savedUrls);
+        console.log('Loaded URLs from localStorage instead');
+      }
     }
   } catch (err) {
-    console.error('Error fetching URLs:', err)
+    console.error('Error in fetchUserUrls:', err);
+    error.value = 'Failed to load your shortened URLs';
+  } finally {
+    isLoading.value = false;
   }
-}
-
+};
 
 
 const shortenUrl = async () => {
@@ -184,32 +214,40 @@ const deleteUrl = async (id, urlCode) => {
     const response = await api.delete(`/api/url/${urlCode}`)
 
     if (response.data && response.data.success) {
-      // Remove from local state
-      urls.value = urls.value.filter((url) => url.id !== id)
+      // Convert IDs to strings for consistent comparison
+      const deleteId = String(id);
+
+      // Remove from local state with strict equality
+      urls.value = urls.value.filter((url) => String(url.id) !== deleteId);
+
+      // Check if the filter worked as expected
+      if (urls.value.length === 0) {
+        console.warn("Warning: All URLs were removed! This might be unintended.");
+      }
 
       // Update localStorage
-      localStorage.setItem('shortUrls', JSON.stringify(urls.value))
+      localStorage.setItem('shortUrls', JSON.stringify(urls.value));
 
       // Show success message
-      successMessage.value = 'URL successfully deleted'
-      showSuccessAlert.value = true
+      successMessage.value = 'URL successfully deleted';
+      showSuccessAlert.value = true;
 
       // Hide success message after 5 seconds
       setTimeout(() => {
-        showSuccessAlert.value = false
-      }, 5000)
+        showSuccessAlert.value = false;
+      }, 5000);
     } else {
-      throw new Error(response.data.message || 'Failed to delete URL')
+      throw new Error(response.data.message || 'Failed to delete URL');
     }
   } catch (err) {
-    console.error('Error deleting URL:', err)
+    console.error('Error deleting URL:', err);
     error.value =
-      err.response?.data?.message || err.message || 'An error occurred while deleting the URL'
+      err.response?.data?.message || err.message || 'An error occurred while deleting the URL';
 
     // Show error for 5 seconds
     setTimeout(() => {
-      error.value = ''
-    }, 5000)
+      error.value = '';
+    }, 5000);
   }
 }
 
