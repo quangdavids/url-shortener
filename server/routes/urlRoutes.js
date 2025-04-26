@@ -23,9 +23,8 @@ router.get('/analytics/:code', urlController.getUrlAnalytics);
 // Delete a URL
 router.delete('/:code', urlController.deleteUrl);
 
-router.get('/:code', urlController.redirectUrl);
-
-
+// Redirect to the original URL (with caching)
+router.get('/:code', cacheMiddleware, urlController.redirectUrl);
 
 
 // Export router

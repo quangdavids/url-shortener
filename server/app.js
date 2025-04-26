@@ -10,7 +10,8 @@ const app = express();
 
 // Apply middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+app.use(cors({origin: ['http://localhost:5173', 'http://127.0.0.1:5173'], 
+    credentials: true})); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 

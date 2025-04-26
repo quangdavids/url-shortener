@@ -36,10 +36,24 @@ const createUrl = async (req, res) => {
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
+// In your urlController.js - modify the redirectUrl function
+
 const redirectUrl = async (req, res) => {
     try {
         // Check if we have the URL data from cache middleware
         if (res.locals.fromCache && res.locals.urlData) {
+            // Check if this is an API request from our frontend (check for XHR header)
+            const isApiRequest = req.xhr || req.headers.accept?.includes('application/json');
+            
+            if (isApiRequest) {
+                // Return JSON with the URL for frontend to handle the redirect
+                return res.json({
+                    success: true,
+                    longUrl: res.locals.urlData.longUrl
+                });
+            }
+            
+            // Regular browser request - do the redirect
             // Increment clicks asynchronously
             urlService.getUrlByCode(res.locals.urlData.urlCode).catch(err => {
                 console.error('Error updating click count:', err);
@@ -56,6 +70,18 @@ const redirectUrl = async (req, res) => {
         
         const url = await urlService.getUrlByCode(code);
         
+        // Check if this is an API request from our frontend
+        const isApiRequest = req.xhr || req.headers.accept?.includes('application/json');
+        
+        if (isApiRequest) {
+            // Return JSON with the URL for frontend to handle the redirect
+            return res.json({
+                success: true,
+                longUrl: url.longUrl
+            });
+        }
+        
+        // Regular browser request - do the redirect
         res.redirect(url.longUrl);
     } catch (error) {
         console.error('Error redirecting:', error);
@@ -74,7 +100,6 @@ const redirectUrl = async (req, res) => {
         });
     }
 };
-
 /**
  * Get URL analytics
  * @param {Object} req - Express request object
