@@ -1,7 +1,7 @@
+
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-
-import axios from 'axios'
+import { urlService, transformUrlData, storeUrlsLocally } from '../helpers/api.js'
 
 // Reactive form data
 const formData = reactive({
@@ -18,15 +18,6 @@ const successMessage = ref('')
 const showSuccessAlert = ref(false)
 const isLoadingAnalytics = ref(false)
 
-
-const api = axios.create({
-  baseURL: 'http://localhost:5000',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
 // Fetch all URLs on component mount
 onMounted(() => {
   fetchUserUrls()
@@ -39,38 +30,24 @@ onMounted(() => {
   }, 30000)
 
   // Clean up interval on component unmount
-onUnmounted(() => {
+  onUnmounted(() => {
     clearInterval(analyticsInterval)
   })
 })
-
-
 
 const fetchUserUrls = async () => {
   try {
     isLoading.value = true;
 
     try {
-      // Call backend API
-      const response = await api.get('/api/url/all');
+      // Call backend API using our service
+      const response = await urlService.getAllUrls();
 
       if (response.data && response.data.success) {
-        // Transform the data to match \ client format
-        const dbUrls = response.data.data.map(url => ({
-          id: url._id || Date.now().toString(), // Fallback if _id isn't available
-          urlCode: url.urlCode,
-          longUrl: url.longUrl,
-          shortUrl: `${window.location.origin}/${url.urlCode}`,
-          clicks: url.clicks || 0,
-          createdAt: url.createdAt,
-          expiresAt: url.expiresAt,
-          copied: false
-        }));
-
+        // Transform the data using our utility function
+        const dbUrls = response.data.data.map(url => transformUrlData(url));
         urls.value = dbUrls;
 
-        // Update localStorage with the latest data
-        localStorage.setItem('shortUrls', JSON.stringify(urls.value));
       } else {
         throw new Error('Failed to fetch URLs');
       }
@@ -78,11 +55,6 @@ const fetchUserUrls = async () => {
       console.error('API error:', apiErr);
 
       // Fall back to localStorage if API fails
-      const savedUrls = localStorage.getItem('shortUrls');
-      if (savedUrls) {
-        urls.value = JSON.parse(savedUrls);
-        console.log('Loaded URLs from localStorage instead');
-      }
     }
   } catch (err) {
     console.error('Error in fetchUserUrls:', err);
@@ -91,7 +63,6 @@ const fetchUserUrls = async () => {
     isLoading.value = false;
   }
 };
-
 
 const shortenUrl = async () => {
   // Reset error and success states
@@ -128,26 +99,28 @@ const shortenUrl = async () => {
       trackClicks: formData.trackClicks,
     }
 
-    // Send API request to create short URL
-    const response = await api.post('/api/url/shorten', requestData)
+    // If custom code is used, add it to the request
+    if (formData.useCustomUrl && formData.customCode) {
+      requestData.customCode = formData.customCode
+    }
+
+    // If expiry is set, add it to the request
+    if (formData.expiryDays > 0) {
+      requestData.expiryDays = formData.expiryDays
+    }
+
+    // Send API request to create short URL using our service
+    const response = await urlService.shortenUrl(requestData)
 
     if (response.data && response.data.success) {
-      const newUrl = {
-        id: response.data.data._id || Date.now().toString(),
-        urlCode: response.data.data.urlCode,
-        longUrl: response.data.data.longUrl,
-        shortUrl: `${window.location.origin}/${response.data.data.urlCode}`,
-        clicks: response.data.data.clicks || 0,
-        createdAt: response.data.data.createdAt,
-        expiresAt: response.data.data.expiresAt,
-        copied: false,
-      }
+      // Transform the data using our utility function
+      const newUrl = transformUrlData(response.data.data)
 
       // Add to local state
       urls.value.unshift(newUrl)
 
       // Save to localStorage as backup
-      localStorage.setItem('shortUrls', JSON.stringify(urls.value))
+
 
       // Show success message
       successMessage.value = `URL successfully shortened: ${newUrl.shortUrl}`
@@ -184,7 +157,7 @@ const copyToClipboard = async (url) => {
       // Reset copied status after 2 seconds
       setTimeout(() => {
         urlObject.copied = false
-        localStorage.setItem('shortUrls', JSON.stringify(urls.value))
+        storeUrlsLocally(urls.value)
       }, 2000)
     }
   } catch (err) {
@@ -194,8 +167,8 @@ const copyToClipboard = async (url) => {
 
 const deleteUrl = async (id, urlCode) => {
   try {
-    // Call API to delete URL
-    const response = await api.delete(`/api/url/${urlCode}`)
+    // Call API to delete URL using our service
+    const response = await urlService.deleteUrl(urlCode)
 
     if (response.data && response.data.success) {
       // Convert IDs to strings for consistent comparison
@@ -210,7 +183,7 @@ const deleteUrl = async (id, urlCode) => {
       }
 
       // Update localStorage
-      localStorage.setItem('shortUrls', JSON.stringify(urls.value));
+      storeUrlsLocally(urls.value);
 
       // Show success message
       successMessage.value = 'URL successfully deleted';
@@ -239,8 +212,8 @@ const getUrlAnalytics = async (urlCode) => {
   try {
     isLoadingAnalytics.value = true
 
-    // Call API to get URL analytics
-    const response = await api.get(`/api/url/analytics/${urlCode}`)
+    // Call API to get URL analytics using our service
+    const response = await urlService.getUrlAnalytics(urlCode)
 
     if (response.data && response.data.success) {
       // Find and update the URL with analytics data
@@ -250,7 +223,7 @@ const getUrlAnalytics = async (urlCode) => {
         urls.value[urlIndex].clicks = response.data.data.clicks
 
         // Update localStorage
-        localStorage.setItem('shortUrls', JSON.stringify(urls.value))
+        storeUrlsLocally(urls.value)
       }
     } else {
       throw new Error(response.data.message || 'Failed to get URL analytics')

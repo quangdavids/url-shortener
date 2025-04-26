@@ -1,10 +1,10 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { urlService } from '../helpers/api.js'
 
-const router = useRouter()
 const route = useRoute()
+const router = useRouter()
 const isLoading = ref(true)
 const errorMessage = ref('')
 
@@ -13,16 +13,7 @@ onMounted(async () => {
     const code = route.params.code
     console.log('Redirecting with code:', code)
 
-    const api = axios.create({
-      baseURL: 'http://localhost:5000',
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'  // Important: Tell backend this is an API request
-      },
-    })
-
-    const response = await api.get(`/${code}`)
+    const response = await urlService.getRedirectUrl(code)
 
     if (response.data && response.data.success && response.data.longUrl) {
       // Now we handle the redirect on the frontend
@@ -40,13 +31,13 @@ onMounted(async () => {
       errorMessage.value = 'URL not found or has expired'
     }
 
-    // Navigate back to home after 5 seconds
+    // Navigate back to home after 10 seconds
     setTimeout(() => {
       router.push({
         path: '/',
         query: { error: errorMessage.value }
       })
-    }, 5000)
+    }, 10000)
   }
 })
 </script>
