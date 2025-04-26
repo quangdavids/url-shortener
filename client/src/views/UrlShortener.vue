@@ -7,8 +7,6 @@ import axios from 'axios'
 const formData = reactive({
   longUrl: '',
   customCode: '',
-  useCustomUrl: false,
-  useExpiry: false,
   expiryDays: 10,
   trackClicks: true,
 })
@@ -130,18 +128,6 @@ const shortenUrl = async () => {
       trackClicks: formData.trackClicks,
     }
 
-    // Add custom code if provided
-    if (formData.useCustomUrl) {
-      requestData.urlCode = formData.customCode
-    }
-
-    if (formData.useExpiry) {
-      const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + parseInt(formData.expiryDays))
-      requestData.expiresAt = expiryDate.toISOString()
-      console.log('Sending expiry date:', requestData.expiresAt, 'Days:', formData.expiryDays)
-    }
-
     // Send API request to create short URL
     const response = await api.post('/api/url/shorten', requestData)
 
@@ -169,8 +155,6 @@ const shortenUrl = async () => {
 
       // Reset form
       formData.longUrl = ''
-      formData.customCode = ''
-
       // Hide success message after 5 seconds
       setTimeout(() => {
         showSuccessAlert.value = false

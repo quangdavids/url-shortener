@@ -20,7 +20,6 @@ onMounted(async () => {
         'Content-Type': 'application/json',
         'Accept': 'application/json'  // Important: Tell backend this is an API request
       },
-      withCredentials: true  // Send cookies if you're using authentication
     })
 
     const response = await api.get(`/${code}`)
@@ -67,7 +66,7 @@ onMounted(async () => {
         <p class="mt-4 text-gray-500">If not, click <router-link to="/">here</router-link>.</p>
         <div class="mt-4">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-          
+
         </div>
       </div>
 
