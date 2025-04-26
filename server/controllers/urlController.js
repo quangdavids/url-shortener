@@ -123,9 +123,30 @@ const deleteUrl = async (req, res) => {
     }
 };
 
+// Generate a function that gets all URLs
+const getAllUrls = async (req, res) => {
+    try {
+        const urls = await urlService.getAllUrls();
+        
+        res.json({
+            success: true,
+            data: urls
+        });
+    } catch (error) {
+        console.error('Error getting all URLs:', error);
+        
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
+        });
+    }
+};
+
+
 module.exports = {
     createUrl,
     redirectUrl,
     getUrlAnalytics,
-    deleteUrl
+    deleteUrl,
+    getAllUrls
 };

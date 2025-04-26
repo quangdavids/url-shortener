@@ -81,6 +81,20 @@ const getUrlByCode = async (urlCode) => {
     return url;
 };
 
+/** getAllUrl */
+
+const getAllUrls = async () => {
+    const urls = await Url.find({}).sort({ createdAt: -1 });
+    return urls.map(url => ({
+        urlCode: url.urlCode,
+        longUrl: url.longUrl,
+        shortUrl: url.shortUrl,
+        clicks: url.clicks,
+        createdAt: url.createdAt,
+        expiresAt: url.expiresAt
+    }));
+};
+
 /**
  * Get URL analytics
  * @param {string} urlCode - The URL code to get analytics for
@@ -125,5 +139,7 @@ module.exports = {
     createShortUrl,
     getUrlByCode,
     getUrlAnalytics,
-    deleteUrl
+    deleteUrl,
+    getAllUrls
+   
 };

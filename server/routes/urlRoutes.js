@@ -11,6 +11,9 @@ const createUrlLimiter = rateLimit({
     message: { success: false, message: 'Too many requests, please try again later' }
 });
 
+
+// In your Express backend
+router.get('/all', urlController.getAllUrls);
 // Create a shortened URL
 router.post('/shorten', createUrlLimiter, urlController.createUrl);
 
@@ -20,16 +23,9 @@ router.get('/analytics/:code', urlController.getUrlAnalytics);
 // Delete a URL
 router.delete('/:code', urlController.deleteUrl);
 
-router.get('/:code', async (req, res) => {
-    const { code } = req.params;
-    try {
-        const url = await urlController.redirectUrl(code);
-        // Instead of redirecting with res.redirect(), return JSON
-        res.json({ success: true, longUrl: url.longUrl });
-    } catch (error) {
-        res.status(404).json({ success: false, message: 'URL not found or expired' });
-    }
-});
+router.get('/:code', urlController.redirectUrl);
+
+
 
 
 // Export router
