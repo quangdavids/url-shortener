@@ -9,6 +9,41 @@ const api = axios.create({
   },
 });
 
+/**
+ * Transform URL data from the API to the client format
+ * @param {Object} urlData - URL data from the API
+ * @returns {Object} Transformed URL data for client use
+ */
+export const transformUrlData = (urlData) => {
+  return {
+    id: urlData._id || Date.now().toString(), // Fallback if _id isn't available
+    urlCode: urlData.urlCode,
+    longUrl: urlData.longUrl,
+    shortUrl: `${window.location.origin}/${urlData.urlCode}`,
+    clicks: urlData.clicks || 0,
+    createdAt: urlData.createdAt,
+    expiresAt: urlData.expiresAt,
+    copied: false
+  };
+};
+
+/**
+ * Store URLs in local storage as backup
+ * @param {Array} urls - Array of URL objects to store
+ */
+export const storeUrlsLocally = (urls) => {
+  localStorage.setItem('shortUrls', JSON.stringify(urls));
+};
+
+/**
+ * Retrieve URLs from local storage
+ * @returns {Array|null} Array of URL objects or null if not found
+ */
+export const getUrlsFromStorage = () => {
+  const savedUrls = localStorage.getItem('shortUrls');
+  return savedUrls ? JSON.parse(savedUrls) : null;
+};
+
 export const urlService = {
   /**
    * Fetch all URLs for the current user
@@ -47,17 +82,20 @@ export const urlService = {
    */
   getUrlAnalytics: async (urlCode) => {
     return api.get(`/api/url/analytics/${urlCode}`);
-  },
+  }
+};
 
+export const redirectService = {
   /**
    * Get long URL for redirect using a short URL code
    * @param {string} code - The code of the short URL
    * @returns {Promise} Response with the long URL for redirection
    */
+    baseURL: 'http://localhost:3000',
   getRedirectUrl: async (code) => {
     // Create a special instance for redirect requests with Accept header
     const redirectApi = axios.create({
-      baseURL: 'http://localhost:5000',
+      baseURL: 'http://localhost:3000',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -65,48 +103,14 @@ export const urlService = {
       },
     });
 
-    return redirectApi.get(`/${code}`);
+    return redirectApi.get(`/api/redirect/${code}`);
   }
-};
-
-/**
- * Transform URL data from the API to the client format
- * @param {Object} urlData - URL data from the API
- * @returns {Object} Transformed URL data for client use
- */
-export const transformUrlData = (urlData) => {
-  return {
-    id: urlData._id || Date.now().toString(), // Fallback if _id isn't available
-    urlCode: urlData.urlCode,
-    longUrl: urlData.longUrl,
-    shortUrl: `${window.location.origin}/${urlData.urlCode}`,
-    clicks: urlData.clicks || 0,
-    createdAt: urlData.createdAt,
-    expiresAt: urlData.expiresAt,
-    copied: false
-  };
-};
-
-/**
- * Store URLs in local storage as backup
- * @param {Array} urls - Array of URL objects to store
- */
-export const storeUrlsLocally = (urls) => {
-  localStorage.setItem('shortUrls', JSON.stringify(urls));
-};
-
-/**
- * Retrieve URLs from local storage
- * @returns {Array|null} Array of URL objects or null if not found
- */
-export const getUrlsFromStorage = () => {
-  const savedUrls = localStorage.getItem('shortUrls');
-  return savedUrls ? JSON.parse(savedUrls) : null;
 };
 
 export default {
   urlService,
+  redirectService,
   transformUrlData,
   storeUrlsLocally,
-  getUrlsFromStorage
+  getUrlsFromStorage,
 };
