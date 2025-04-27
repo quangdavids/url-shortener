@@ -167,39 +167,12 @@ const copyToClipboard = async (url) => {
 
 const deleteUrl = async (id, urlCode) => {
   try {
-    // First log what we're trying to delete for debugging
-    console.log('Attempting to delete URL with id:', id, 'and urlCode:', urlCode);
-    console.log('Current URLs before deletion:', urls.value);
-
     // Call API to delete URL using our service
     const response = await urlService.deleteUrl(urlCode)
 
     if (response.data && response.data.success) {
-      // Convert IDs to strings for consistent comparison
-      const deleteId = String(id);
-
-      // Log the ID we're filtering by
-      console.log('Filtering URLs with deleteId:', deleteId);
-
-      // Store original length for verification
-      const originalLength = urls.value.length;
-
-      // Apply the filter with debugging
-      urls.value = urls.value.filter((url) => {
-        const urlId = String(url.id || url._id); // Try both common ID field names
-        const match = urlId !== deleteId;
-        console.log(`URL ID: ${urlId}, DeleteID: ${deleteId}, Keep URL: ${match}`);
-        return match;
-      });
-
-      // Verify that we only removed one item
-      if (urls.value.length === originalLength - 1) {
-        console.log('Successfully removed exactly one URL');
-      } else if (urls.value.length === originalLength) {
-        console.warn('Warning: No URLs were removed. ID might not match.');
-      } else {
-        console.error(`Warning: Removed ${originalLength - urls.value.length} URLs instead of just one!`);
-      }
+      // Simple filter approach - use urlCode for reliable comparison
+      urls.value = urls.value.filter((url) => url.urlCode !== urlCode);
 
       // Update localStorage
       storeUrlsLocally(urls.value);
