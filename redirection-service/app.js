@@ -4,7 +4,7 @@ const helmet = require('helmet');
 const redirectRoutes = require('./routes/redirectRoutes');
 const redirectController = require('./controllers/redirectController');
 // import cacheMiddleware from url-service 
-const { cacheMiddleware } = require('../url-service/middlewares/cache');
+const { cacheMiddleware } = require('../shorten-service/middlewares/cache');
 
 // Create Express app
 const app = express();

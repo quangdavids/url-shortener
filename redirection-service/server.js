@@ -1,5 +1,5 @@
 const app = require('./app');
-const connectDB = require('../url-service/config/db');
+const connectDB = require('../shorten-service/config/db');
 require('dotenv').config();
 
 // Connect to MongoDB

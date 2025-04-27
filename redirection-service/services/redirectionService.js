@@ -1,7 +1,7 @@
-const Url = require('../../url-service/models/Url');
+const Url = require('../../shorten-service/models/Url');
 require('dotenv').config();
 // const { getUrlByCode } = require('../services/urlService');
-const { cacheUrl, invalidateCache } = require('../../url-service/middlewares/cache');
+const { cacheUrl, invalidateCache } = require('../../shorten-service/middlewares/cache');
 /**
  * Handle URL redirection based on provided code
  * @param {Object} req - Express request object
