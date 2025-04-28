@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "aMF8FRUodvTzqVyfXfMq3lkOwyJwJa1dfOMTIXXwgQs=",
+  "Source": "RedirectService",
+  "BasePath": "_content/RedirectService",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
