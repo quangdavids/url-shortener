@@ -23,7 +23,7 @@ const createShortUrl = async (longUrl) => {
         return existingUrl;
     }
 
-    // Generate a unique URL code
+    // Generate new short URL only if it doesn't exist
     const urlCode = generateShortId();
     const baseUrl = process.env.BASE_URL;
     const shortUrl = `${baseUrl}/${urlCode}`;
