@@ -103,7 +103,7 @@ export const redirectService = {
       },
     });
 
-    return redirectApi.get(`/api/${code}`);
+    return redirectApi.get(`/${code}`);
   }
 };
 
