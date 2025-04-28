@@ -1,5 +1,5 @@
 const urlService = require('../services/urlService');
-
+const Url = require('../models/Url');
 
 /**
  * Create a shortened URL
@@ -106,11 +106,28 @@ const getAllUrls = async (req, res) => {
     }
 };
 
+// In your URL controller (urlController.js)
+const getOriginalUrl = async (req, res) => {
+    try {
+        const { code } = req.params;
+        const url = await Url.findOne({ urlCode: code });
+
+        if (!url) {
+            return res.status(404).json({ message: 'URL not found' });
+        }
+        return res.json({ longUrl: url.longUrl });
+    } catch (error) {
+        console.error('Error fetching URL:', error);  // Log the error
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
 
 module.exports = {
     createUrl,
     // redirectUrl,
     getUrlAnalytics,
     deleteUrl,
-    getAllUrls
+    getAllUrls,
+    getOriginalUrl
 };

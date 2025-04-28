@@ -24,6 +24,8 @@ router.get('/analytics/:code', urlController.getUrlAnalytics);
 router.delete('/:code', urlController.deleteUrl);
 
 
+router.get('/:code', urlController.getOriginalUrl);
+
 
 // Export router
 module.exports = router;
