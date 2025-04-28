@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'http://localhost:4000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -91,11 +91,11 @@ export const redirectService = {
    * @param {string} code - The code of the short URL
    * @returns {Promise} Response with the long URL for redirection
    */
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:4000',
   getRedirectUrl: async (code) => {
     // Create a special instance for redirect requests with Accept header
     const redirectApi = axios.create({
-      baseURL: 'http://localhost:3000',
+      baseURL: 'http://localhost:4000',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export const redirectService = {
       },
     });
 
-    return redirectApi.get(`/api/redirect/${code}`);
+    return redirectApi.get(`/api/${code}`);
   }
 };
 
