@@ -1,4 +1,5 @@
 using RedirectService.Configuration;
+using RedirectService.Middleware;
 using RedirectService.Models;
 using RedirectService.Services;
 
@@ -28,6 +29,7 @@ app.UseCors();
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
+app.UseMiddleware<ClickTrackingMiddleware>();
 
 
 app.Run();

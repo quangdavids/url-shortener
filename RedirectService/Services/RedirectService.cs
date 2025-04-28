@@ -51,5 +51,12 @@ namespace RedirectService.Services
             
             return result;
         }
+
+        public async Task IncrementClicksAsync(string shortCode)
+        {
+            _logger.LogInformation("Incrementing clicks for URL with code: {ShortCode}", shortCode);
+            var update = Builders<UrlModel>.Update.Inc(u => u.Clicks, 1);
+            await _shortUrls.UpdateOneAsync(u => u.UrlCode == shortCode, update);
+        }
     }
 }
