@@ -113,3 +113,9 @@ D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\MongoDB.Dr
 D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\SharpCompress.dll
 D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Snappier.dll
 D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\ZstdSharp.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\DnsClient.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\MongoDB.Bson.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\MongoDB.Driver.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\SharpCompress.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\Snappier.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\ZstdSharp.dll
