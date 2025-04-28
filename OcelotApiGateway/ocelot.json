@@ -62,15 +62,15 @@
       "RouteIsCaseSensitive": false
     },
     {
-      "DownstreamPathTemplate": "/api/url/{code}",
+      "DownstreamPathTemplate": "/{code}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5000
+          "Port": 5001
         }
       ],
-      "UpstreamPathTemplate": "/api/{code}",
+      "UpstreamPathTemplate": "/{code}",
       "UpstreamHttpMethod": [ "GET" ],
       "RouteIsCaseSensitive": false,
       "RequestIdKey": "X-Request-Id",
