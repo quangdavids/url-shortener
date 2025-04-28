@@ -1,4 +1,3 @@
-
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { urlService, transformUrlData, storeUrlsLocally } from '../helpers/api.js'
@@ -17,6 +16,8 @@ const error = ref('')
 const successMessage = ref('')
 const showSuccessAlert = ref(false)
 const isLoadingAnalytics = ref(false)
+const warnMessage = ref('')
+const showWarningAlert = ref(false)
 
 // Fetch all URLs on component mount
 onMounted(() => {
@@ -93,6 +94,18 @@ const shortenUrl = async () => {
   isLoading.value = true
 
   try {
+    // Check if URL already exists in local state
+    const existingUrl = urls.value.find(url => url.longUrl === formData.longUrl)
+    if (existingUrl) {
+      warnMessage.value = `URL was already shortened: ${existingUrl.shortUrl}`
+      setTimeout(() => {
+        showWarningAlert.value = false
+      }, 5000)
+
+      formData.longUrl = ''
+      return
+    }
+
     // Prepare request data
     const requestData = {
       longUrl: formData.longUrl,
@@ -178,7 +191,7 @@ const deleteUrl = async (id, urlCode) => {
       storeUrlsLocally(urls.value);
 
       // Show success message
-      successMessage.value = 'URL successfully deleted';
+      Message.value = 'URL successfully deleted';
       showSuccessAlert.value = true;
 
       // Hide success message after 5 seconds
@@ -283,6 +296,29 @@ const formatDate = (date) => {
         </div>
         <div class="ml-3">
           <p class="text-sm text-green-700">{{ successMessage }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warning Alert -->
+    <div v-if="showWarningAlert" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-yellow-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-7a1 1 0 11-2 0V7a1 1 0 112 0v4zm-1.293-.293a1 1 0 101.414-1.414L9.586 10l.707-.707a1 1 0 00-1.414-1.414l-2 2a1 1 0 000 1.414l2 .293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-yellow-700">{{ warnMessage }}</p>
         </div>
       </div>
     </div>
@@ -555,5 +591,7 @@ const formatDate = (date) => {
       <h3 class="mt-2 text-sm font-medium text-gray-900">No shortened URLs</h3>
       <p class="mt-1 text-sm text-gray-500">Get started by creating a new shortened URL.</p>
     </div>
+
   </div>
+
 </template>
