@@ -71,3 +71,45 @@ C:\Users\Admin\Documents\url-shortener\RedirectService\obj\Debug\net9.0\refint\R
 C:\Users\Admin\Documents\url-shortener\RedirectService\obj\Debug\net9.0\RedirectService.pdb
 C:\Users\Admin\Documents\url-shortener\RedirectService\obj\Debug\net9.0\RedirectService.genruntimeconfig.cache
 C:\Users\Admin\Documents\url-shortener\RedirectService\obj\Debug\net9.0\ref\RedirectService.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\appsettings.Development.json
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\appsettings.json
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.staticwebassets.endpoints.json
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.exe
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.deps.json
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.runtimeconfig.json
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\RedirectService.pdb
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Microsoft.OpenApi.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.csproj.AssemblyReference.cache
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.GeneratedMSBuildEditorConfig.editorconfig
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.AssemblyInfoInputs.cache
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.AssemblyInfo.cs
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.csproj.CoreCompileInputs.cache
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.MvcApplicationPartsAssemblyInfo.cs
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.MvcApplicationPartsAssemblyInfo.cache
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\scopedcss\bundle\RedirectService.styles.css
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets.build.json
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets.development.json
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets.build.endpoints.json
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets\msbuild.RedirectService.Microsoft.AspNetCore.StaticWebAssets.props
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets\msbuild.RedirectService.Microsoft.AspNetCore.StaticWebAssetEndpoints.props
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets\msbuild.build.RedirectService.props
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets\msbuild.buildMultiTargeting.RedirectService.props
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets\msbuild.buildTransitive.RedirectService.props
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\staticwebassets.pack.json
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\Redirect.9B58B67A.Up2Date
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.dll
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\refint\RedirectService.dll
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.pdb
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\RedirectService.genruntimeconfig.cache
+D:\New folder (2)\url-shortener-main\RedirectService\obj\Debug\net9.0\ref\RedirectService.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\DnsClient.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\MongoDB.Bson.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\MongoDB.Driver.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\SharpCompress.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\Snappier.dll
+D:\New folder (2)\url-shortener-main\RedirectService\bin\Debug\net9.0\ZstdSharp.dll

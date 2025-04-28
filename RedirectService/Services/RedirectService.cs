@@ -1,128 +1,55 @@
-using System;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+using MongoDB.Driver;
+using RedirectService.Models;
+using Microsoft.Extensions.Options;
+using RedirectService.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace RedirectService.Services
 {
-    public class UrlRedirectService : IRedirectService
+    public class RedirectServiceClass
     {
-        private readonly HttpClient _httpClient;
-        private readonly ILogger<UrlRedirectService> _logger;
-        private readonly string _redirectServiceBaseUrl;
+        private readonly IMongoCollection<UrlModel> _shortUrls;
+        private readonly ILogger<RedirectServiceClass> _logger;
+        private readonly MongoDbSettings _settings;
 
-        public UrlRedirectService(HttpClient httpClient, IConfiguration configuration, ILogger<UrlRedirectService> logger)
+        public RedirectServiceClass(IOptions<MongoDbSettings> mongoDbSettings, ILogger<RedirectServiceClass> logger)
         {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-            _redirectServiceBaseUrl = configuration["RedirectService:BaseUrl"]  ?? throw new InvalidOperationException("Missing configuration: RedirectService:BaseUrl");
-        }
-
-        public async Task<string> RedirectAsync(string shortCode)
-        {
-            if (string.IsNullOrWhiteSpace(shortCode))
-            {
-                throw new ArgumentException("Short code must not be empty.", nameof(shortCode));
-            }
-
-            _logger.LogInformation("Processing redirect for short code: {ShortCode}", shortCode);
-
-            var originalUrl = await GetOriginalUrlAsync(shortCode);
-
-            if (originalUrl == null)
-            {
-                _logger.LogWarning("Short code {ShortCode} not found.", shortCode);
-                return null;
-            }
-
-            await TrackVisitAsync(shortCode);
-
-            return originalUrl;
-        }
-
-        private async Task<string> GetOriginalUrlAsync(string shortCode)
-        {
-            var requestUrl = $"{_redirectServiceBaseUrl}/api/url/{shortCode}";
-            _logger.LogDebug("Fetching original URL from: {RequestUrl}", requestUrl);
+            _logger = logger;
+            _settings = mongoDbSettings.Value;
 
             try
             {
-                _logger.LogInformation("Calling URL Shortener service at: {RequestUrl}", requestUrl);
-                var response = await _httpClient.GetAsync(requestUrl);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var jsonElement = await response.Content.ReadFromJsonAsync<JsonElement>();
-                    if (jsonElement.TryGetProperty("originalUrl", out var urlProperty) &&
-                        urlProperty.ValueKind == JsonValueKind.String)
-                    {
-                        return urlProperty.GetString();
-                    }
-
-                    _logger.LogWarning("originalUrl property not found in response.");
-                    return null;
-                }
-
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    return null;
-                }
-
-                var errorBody = await response.Content.ReadAsStringAsync();
-                _logger.LogError("ShortenerService error: {StatusCode} {ReasonPhrase}. Response: {ErrorBody}",
-                    (int)response.StatusCode, response.ReasonPhrase, errorBody);
-
-                response.EnsureSuccessStatusCode(); // Will throw
-                return null;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "HTTP request error while fetching original URL for {ShortCode}", shortCode);
-                throw;
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogError(ex, "JSON parsing error for short code {ShortCode}", shortCode);
-                throw;
+                var client = new MongoClient(_settings.ConnectionString);
+                var database = client.GetDatabase(_settings.DatabaseName);
+                _shortUrls = database.GetCollection<UrlModel>(_settings.CollectionName);
+                
+                _logger.LogInformation("MongoDB connected to database: {DatabaseName}, collection: {CollectionName}", 
+                    _settings.DatabaseName, _settings.CollectionName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error fetching original URL for {ShortCode}", shortCode);
+                _logger.LogError(ex, "Failed to connect to MongoDB");
                 throw;
             }
         }
 
-        private async Task TrackVisitAsync(string shortCode)
+        public async Task<UrlModel?> GetOriginalUrlAsync(string shortCode)
         {
-            var visitUrl = $"{_redirectServiceBaseUrl}/api/urls/{shortCode}/visit";
-            _logger.LogDebug("Tracking visit to: {VisitUrl}", visitUrl);
-
-            try
+            _logger.LogInformation("Searching for URL with code: {ShortCode} in database: {DatabaseName}, collection: {CollectionName}", 
+                shortCode, _settings.DatabaseName, _settings.CollectionName);
+                
+            var result = await _shortUrls.Find(s => s.UrlCode == shortCode).FirstOrDefaultAsync();
+            
+            if (result == null)
             {
-                var content = new StringContent(
-                    JsonSerializer.Serialize(new { }),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _httpClient.PostAsync(visitUrl, content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorBody = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Failed to track visit. Status: {StatusCode} {ReasonPhrase}. Response: {ErrorBody}",
-                        (int)response.StatusCode, response.ReasonPhrase, errorBody);
-                }
+                _logger.LogWarning("No URL found for code: {ShortCode}", shortCode);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Error tracking visit for short code {ShortCode}", shortCode);
+                _logger.LogInformation("Found URL for code: {ShortCode}, longUrl: {LongUrl}", shortCode, result.LongUrl);
             }
+            
+            return result;
         }
     }
 }

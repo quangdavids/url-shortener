@@ -1,38 +1,33 @@
-using System;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using RedirectService.Configuration;
+using RedirectService.Models;
 using RedirectService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add services
+builder.Services.Configure<MongoDbSettings>(
+    builder.Configuration.GetSection("MongoDbSettings"));
 
-// Register HttpClient with Polly for resilience
-builder.Services.AddHttpClient<IRedirectService, UrlRedirectService>();
-    
+builder.Services.AddSingleton<RedirectServiceClass>();
+
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:4000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+builder.Services.AddControllers();
 
 var app = builder.Build();
-
+app.UseCors();
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    app.UseDeveloperExceptionPage();
-}
-
-
 app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 
-// Add a simple health check endpoint
-app.MapGet("/health", () => "Healthy");
 
 app.Run();
-
-// Define retry policy

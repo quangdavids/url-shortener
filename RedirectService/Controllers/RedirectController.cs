@@ -5,37 +5,32 @@ namespace RedirectService.Controllers
 {
     [ApiController]
     [Route("")]
-    public class RedirectController(IRedirectService redirectService, ILogger<RedirectController> logger) : ControllerBase
+    public class RedirectController : ControllerBase
     {
-        private readonly IRedirectService _redirectService = redirectService ?? throw new ArgumentNullException(nameof(redirectService));
-        private readonly ILogger<RedirectController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        private readonly RedirectServiceClass _redirectService;
+
+        public RedirectController(RedirectServiceClass redirectService)
+        {
+            _redirectService = redirectService;
+        }
 
         [HttpGet("{shortCode}")]
-        public async Task<IActionResult> RedirectToUrl(string shortCode)
+        public async Task<IActionResult> RedirectToOriginal(string shortCode)
         {
-            if (string.IsNullOrWhiteSpace(shortCode))
+            var shortUrl = await _redirectService.GetOriginalUrlAsync(shortCode);
+            if (shortUrl == null)
             {
-                return BadRequest("Short code is required");
+                return NotFound(new { message = "Short URL not found" });
             }
 
-            try
+             var acceptHeader = Request.Headers.Accept.ToString();
+            if (acceptHeader.Contains("application/json"))
             {
-                var originalUrl = await _redirectService.RedirectAsync(shortCode);
-                
-                if (originalUrl == null)
-                {
-                    return NotFound($"No URL found for code: {shortCode}");
-                }
+                // Return JSON response for API requests
+                return Ok(new { longUrl = shortUrl.LongUrl });
+            }
 
-                _logger.LogInformation("Redirecting {ShortCode} to {OriginalUrl}", shortCode, originalUrl);
-    
-                return await Task.FromResult(Redirect(originalUrl));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing redirect for {ShortCode}", shortCode);
-                return StatusCode(500, "An error occurred while processing your request");
-            }
+            return Redirect(shortUrl.LongUrl);
         }
-    }  
     }
+}
