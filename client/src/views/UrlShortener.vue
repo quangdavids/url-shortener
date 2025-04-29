@@ -85,12 +85,6 @@ const shortenUrl = async () => {
     return
   }
 
-  // Validate custom code if used
-  if (formData.useCustomUrl && !formData.customCode) {
-    error.value = 'Please enter a custom URL suffix'
-    return
-  }
-
   isLoading.value = true
 
   try {
@@ -115,11 +109,6 @@ const shortenUrl = async () => {
     // If custom code is used, add it to the request
     if (formData.useCustomUrl && formData.customCode) {
       requestData.customCode = formData.customCode
-    }
-
-    // If expiry is set, add it to the request
-    if (formData.expiryDays > 0) {
-      requestData.expiryDays = formData.expiryDays
     }
 
     // Send API request to create short URL using our service
