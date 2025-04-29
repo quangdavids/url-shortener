@@ -119,3 +119,5 @@ C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\MongoDB.
 C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\SharpCompress.dll
 C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\Snappier.dll
 C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\ZstdSharp.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\Pipelines.Sockets.Unofficial.dll
+C:\Users\Admin\Documents\url-shortener\RedirectService\bin\Debug\net9.0\StackExchange.Redis.dll
